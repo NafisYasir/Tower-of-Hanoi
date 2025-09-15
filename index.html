@@ -1,0 +1,550 @@
+index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower of Hanoi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1d263b, #0c152a);
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .game-container {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            align-items: flex-end;
+            padding: 2rem;
+            flex-grow: 1;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .peg-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 33.33%;
+            min-width: 150px;
+            height: 400px;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        .peg {
+            width: 1rem;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .base {
+            width: 120%;
+            height: 1.5rem;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 0;
+            margin-top: 1rem;
+        }
+
+        .disk-stack {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+            padding-bottom: 2rem;
+        }
+
+        .disk {
+            height: 25px;
+            margin-top: -3px;
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+        }
+
+        .disk.selected {
+            transform: translateY(-80px) scale(1.1);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), 0 5px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .disk-animation {
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            padding: 0 1rem;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #a0f0ff;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #cbd5e1;
+        }
+
+        button, select {
+            background: #2b6cb0;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover, select:hover {
+            transform: translateY(-2px);
+            background: #3182ce;
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message-box {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            color: #fff;
+            font-weight: 700;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s;
+            z-index: 100;
+        }
+
+        .message-box.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* New Congratulations Screen Styles */
+        #congratulations-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #4c6693, #1d263b);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        #congratulations-screen h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        #congratulations-screen p {
+            font-size: 1.5rem;
+            margin-top: 1rem;
+            color: #a0f0ff;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            animation: popIn 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+        
+        #congratulations-screen button {
+            margin-top: 2rem;
+            background: #4caf50;
+            padding: 1rem 2rem;
+            font-size: 1.25rem;
+            border-radius: 9999px;
+            animation: popIn 0.9s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        /* Confetti Animation */
+        .confetti-piece {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: transparent;
+            border-radius: 50%;
+            transform: rotate(45deg);
+            animation: confetti-fall 3s linear infinite;
+        }
+        
+        .confetti-piece:nth-child(2n) {
+            border-radius: 50%;
+        }
+        
+        .confetti-piece:nth-child(3n) {
+            transform: rotate(90deg);
+        }
+        
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="stats-container">
+    <div class="stat-box">
+        <div id="moves" class="stat-value">0</div>
+        <div class="stat-label">Moves</div>
+    </div>
+    <div class="stat-box">
+        <div id="min-moves" class="stat-value">0</div>
+        <div class="stat-label">Minimum Moves</div>
+    </div>
+</div>
+
+<div class="game-container">
+    <div id="peg-A" class="peg-container" onclick="handlePegClick(0)">
+        <div class="disk-stack"></div>
+        <div class="peg"></div>
+        <div class="base"></div>
+    </div>
+    <div id="peg-B" class="peg-container" onclick="handlePegClick(1)">
+        <div class="disk-stack"></div>
+        <div class="peg"></div>
+        <div class="base"></div>
+    </div>
+    <div id="peg-C" class="peg-container" onclick="handlePegClick(2)">
+        <div class="disk-stack"></div>
+        <div class="peg"></div>
+        <div class="base"></div>
+    </div>
+</div>
+
+<div class="control-panel">
+    <select id="disk-select" onchange="resetGame()">
+        <option value="3">3 Disks</option>
+        <option value="4">4 Disks</option>
+        <option value="5">5 Disks</option>
+        <option value="6">6 Disks</option>
+        <option value="7">7 Disks</option>
+        <option value="8">8 Disks</option>
+    </select>
+    <button onclick="resetGame()">Reset</button>
+    <button id="solve-button" onclick="solvePuzzle()">Solve</button>
+</div>
+
+<div id="message-box" class="message-box"></div>
+
+<!-- New Congratulations Screen -->
+<div id="congratulations-screen">
+    <div class="confetti"></div>
+    <h1 class="text-white">CONGRATULATIONS!</h1>
+    <p class="text-xl text-teal-300">You solved the puzzle!</p>
+    <p id="final-stats" class="mt-4 text-lg"></p>
+    <button onclick="resetGame()">Play Again</button>
+</div>
+
+<script>
+    const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#00bcd4', '#009688', '#4caf50', '#8bc34a'];
+    let numDisks;
+    let pegs = [[], [], []];
+    let moves = 0;
+    let selectedDisk = null;
+    let selectedPegIndex = null;
+    let isSolving = false;
+    let solvingSteps = [];
+    let solvingIndex = 0;
+
+    const gameContainer = document.querySelector('.game-container');
+    const pegContainers = document.querySelectorAll('.peg-container');
+    const diskSelect = document.getElementById('disk-select');
+    const movesCounter = document.getElementById('moves');
+    const minMovesCounter = document.getElementById('min-moves');
+    const messageBox = document.getElementById('message-box');
+    const solveButton = document.getElementById('solve-button');
+    const congratulationsScreen = document.getElementById('congratulations-screen');
+    const finalStatsText = document.getElementById('final-stats');
+
+    function showMessage(msg, duration = 2000) {
+        messageBox.textContent = msg;
+        messageBox.classList.add('show');
+        setTimeout(() => {
+            messageBox.classList.remove('show');
+        }, duration);
+    }
+
+    function createDisks() {
+        const stackContainer = pegContainers[0].querySelector('.disk-stack');
+        stackContainer.innerHTML = '';
+        pegs = [[], [], []];
+        
+        for (let i = numDisks; i > 0; i--) {
+            const disk = document.createElement('div');
+            disk.classList.add('disk');
+            disk.style.width = `${(i / numDisks) * 70 + 30}%`;
+            disk.style.backgroundColor = colors[numDisks - i];
+            disk.setAttribute('data-size', i);
+            stackContainer.appendChild(disk);
+            pegs[0].push(i);
+        }
+    }
+
+    function renderDisks() {
+        pegContainers.forEach((peg, index) => {
+            const stackContainer = peg.querySelector('.disk-stack');
+            stackContainer.innerHTML = '';
+            pegs[index].forEach((diskSize) => {
+                const disk = document.createElement('div');
+                disk.classList.add('disk');
+                disk.style.width = `${(diskSize / numDisks) * 70 + 30}%`;
+                disk.style.backgroundColor = colors[numDisks - diskSize];
+                disk.setAttribute('data-size', diskSize);
+                stackContainer.appendChild(disk);
+            });
+        });
+    }
+
+    function updateMoves() {
+        movesCounter.textContent = moves;
+    }
+
+    function checkWin() {
+        if (pegs[2].length === numDisks) {
+            const minMoves = Math.pow(2, numDisks) - 1;
+            finalStatsText.innerHTML = `You solved it in ${moves} moves!<br>The minimum possible moves are ${minMoves}.`;
+            congratulationsScreen.style.display = 'flex';
+            solveButton.disabled = true;
+            generateConfetti();
+        }
+    }
+
+    function generateConfetti() {
+        const confettiContainer = document.querySelector('.confetti');
+        confettiContainer.innerHTML = '';
+        const confettiColors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#00bcd4', '#009688', '#4caf50', '#8bc34a'];
+        for (let i = 0; i < 100; i++) {
+            const piece = document.createElement('div');
+            piece.classList.add('confetti-piece');
+            piece.style.left = `${Math.random() * 100}vw`;
+            piece.style.animationDelay = `${Math.random() * 3}s`;
+            piece.style.backgroundColor = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+            confettiContainer.appendChild(piece);
+        }
+    }
+
+    function isMoveValid(fromPeg, toPeg) {
+        if (!pegs[fromPeg].length) {
+            return false;
+        }
+        const topDiskFrom = pegs[fromPeg][pegs[fromPeg].length - 1];
+        if (!pegs[toPeg].length || topDiskFrom < pegs[toPeg][pegs[toPeg].length - 1]) {
+            return true;
+        }
+        return false;
+    }
+
+    function moveDisk(fromPegIndex, toPegIndex) {
+        const fromPeg = pegs[fromPegIndex];
+        const toPeg = pegs[toPegIndex];
+        const disk = fromPeg.pop();
+        toPeg.push(disk);
+        moves++;
+        updateMoves();
+        checkWin();
+    }
+    
+    async function animateMove(fromPegIndex, toPegIndex) {
+        const fromPegEl = pegContainers[fromPegIndex];
+        const toPegEl = pegContainers[toPegIndex];
+        const diskEl = fromPegEl.querySelector('.disk:last-child');
+        
+        if (!diskEl) return;
+
+        const startRect = fromPegEl.getBoundingClientRect();
+        const endRect = toPegEl.getBoundingClientRect();
+
+        const startX = diskEl.getBoundingClientRect().left;
+        const startY = diskEl.getBoundingClientRect().top;
+
+        diskEl.style.transition = 'none';
+        diskEl.style.transform = `translateY(-100px) translateX(${startX - startRect.left}px)`;
+        
+        await new Promise(requestAnimationFrame);
+
+        diskEl.style.transition = 'transform 0.5s ease-in-out';
+        diskEl.style.transform = `translateY(-100px) translateX(${endRect.left - startRect.left}px)`;
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        diskEl.style.transition = 'transform 0.5s ease-in-out';
+        diskEl.style.transform = `translateY(0px) translateX(${endRect.left - startRect.left}px)`;
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        diskEl.style.transition = 'none';
+        diskEl.style.transform = '';
+        
+        moveDisk(fromPegIndex, toPegIndex);
+        renderDisks();
+    }
+    
+    function towerOfHanoi(n, source, destination, auxiliary) {
+        if (n === 1) {
+            solvingSteps.push({ from: source, to: destination });
+            return;
+        }
+        towerOfHanoi(n - 1, source, auxiliary, destination);
+        solvingSteps.push({ from: source, to: destination });
+        towerOfHanoi(n - 1, auxiliary, destination, source);
+    }
+    
+    async function solvePuzzle() {
+        if (isSolving) return;
+        isSolving = true;
+        solveButton.disabled = true;
+        
+        pegContainers.forEach(peg => peg.onclick = null);
+
+        moves = 0;
+        updateMoves();
+        renderDisks();
+        
+        solvingSteps = [];
+        solvingIndex = 0;
+        
+        towerOfHanoi(numDisks, 0, 2, 1);
+        
+        while (solvingIndex < solvingSteps.length) {
+            const step = solvingSteps[solvingIndex];
+            
+            if (isMoveValid(step.from, step.to)) {
+                await animateMove(step.from, step.to);
+            } else {
+                console.error("Invalid move in auto-solve sequence.");
+            }
+            solvingIndex++;
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        isSolving = false;
+        pegContainers.forEach((peg, index) => peg.onclick = () => handlePegClick(index));
+        showMessage('Puzzle solved by the program!', 3000);
+        solveButton.disabled = false;
+    }
+
+    function handlePegClick(pegIndex) {
+        if (isSolving) return;
+        
+        const topDisk = selectedPegIndex !== null ? pegs[selectedPegIndex][pegs[selectedPegIndex].length - 1] : null;
+
+        if (selectedDisk) {
+            if (isMoveValid(selectedPegIndex, pegIndex)) {
+                moveDisk(selectedPegIndex, pegIndex);
+                renderDisks();
+            } else {
+                showMessage('Invalid move! A larger disk cannot be placed on a smaller one.');
+            }
+            
+            selectedDisk.classList.remove('selected');
+            selectedDisk = null;
+            selectedPegIndex = null;
+        } else {
+            const diskOnPeg = pegContainers[pegIndex].querySelector('.disk:last-child');
+            if (diskOnPeg) {
+                selectedDisk = diskOnPeg;
+                selectedPegIndex = pegIndex;
+                selectedDisk.classList.add('selected');
+            }
+        }
+    }
+
+    function resetGame() {
+        isSolving = false;
+        selectedDisk = null;
+        selectedPegIndex = null;
+        moves = 0;
+        numDisks = parseInt(diskSelect.value);
+        updateMoves();
+        minMovesCounter.textContent = Math.pow(2, numDisks) - 1;
+        createDisks();
+        solveButton.disabled = false;
+        pegContainers.forEach((peg, index) => peg.onclick = () => handlePegClick(index));
+        congratulationsScreen.style.display = 'none';
+    }
+
+    window.onload = function() {
+        resetGame();
+    };
+
+</script>
+
+</body>
+</html>
